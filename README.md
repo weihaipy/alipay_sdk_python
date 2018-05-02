@@ -51,3 +51,29 @@ AopSdk.py
 
 # 吐槽
 文件太多了,翻译起来比较麻烦
+
+# demo 参照 https://docs.open.alipay.com/54/103419/
+用法和 php 版本的一样,,只是由于目录结构的原因导致导入的时候代码较长,仅以普通调用为例:
+
+```python
+import alipay_sdk_python
+c =  alipay_sdk_python.aop.AopClient.AopClient()
+c.gatewayUrl = "https://openapi.alipay.com/gateway.do"
+c.appId = "app_id"
+c.rsaPrivateKey = '请填写开发者私钥去头去尾去回车，一行字符串' 
+c.format = "json"
+c.charset= "GBK"
+c.signType= "RSA2"
+c.alipayrsaPublicKey = '请填写支付宝公钥，一行字符串'
+#实例化具体API对应的request类,类名称和接口名称对应,当前调用接口名称：alipay.open.public.template.message.industry.modify
+request = alipay_sdk_python.aop.request.AlipayOpenPublicTemplateMessageIndustryModifyRequest.AlipayOpenPublicTemplateMessageIndustryModifyRequest()
+#SDK已经封装掉了公共参数，这里只需要传入业务参数
+#此次只是参数展示，未进行字符串转义，实际情况下请转义
+request.bizContent = "{" +
+"    \"primary_industry_name\":\"IT科技/IT软件与服务\"," +\
+"    \"primary_industry_code\":\"10001/20102\"," +\
+"    \"secondary_industry_code\":\"10001/20102\"," +\
+"    \"secondary_industry_name\":\"IT科技/IT软件与服务\"" +\
+" }"
+response= c.execute(request)
+```

@@ -4,6 +4,7 @@
 
 
 # namespace alipay\api
+from alipay_sdk_python.Util import *
 
 
 class AlipayMobilePublicMultiMediaExecute:

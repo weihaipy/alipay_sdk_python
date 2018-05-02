@@ -215,15 +215,15 @@ class AopClient:
         }
         version = request.getApiVersion()
         params['version'] = self.checkEmpty(version) ? self.apiVersion: version
-        if notify_url = request.getNotifyUrl():
+        notify_url = request.getNotifyUrl()
+        if notify_url :
             params['notify_url'] = notify_url
         dict = request.getApiParas()
         params['biz_content'] = dict['biz_content']
         ksort(params)
         params['sign'] = self.generateSign(params, self.signType)
-        foreach(params as & value)
+        foreach(params as & value)  # 这里 value 是传指针
             value = self.characet(value, params['charset'])
-
 
         return http_build_query(params)
 
@@ -262,20 +262,14 @@ class AopClient:
 
         # 获取业务参数
         apiParams = request.getApiParas()
-
         if method_exists(request, "getNeedEncrypt") and request.getNeedEncrypt():
-
             sysParams["encrypt_type"] = self.encryptType
-
             if self.checkEmpty(apiParams['biz_content']):
                 raise Exception(" api request Fail! The reason : encrypt request is not supperted!")
-
             if self.checkEmpty(self.encryptKey) | | self.checkEmpty(self.encryptType):
                 raise Exception(" encryptType and encryptKey must not None! ")
-
             if "AES" != self.encryptType:
                 raise Exception("加密类型只支持AES")
-
             # 执行加密
             enCryptContent = encrypt(apiParams['biz_content'], self.encryptKey)
             apiParams['biz_content'] = enCryptContent
@@ -285,16 +279,13 @@ class AopClient:
 
         # 待签名字符串
         preSignStr = self.getSignContent(totalParams)
-
         # 签名
         totalParams["sign"] = self.generateSign(totalParams, self.signType)
-
         if "GET" == strtoupper(httpmethod):
             # value做urlencode
             preString = self.getSignContentUrlencode(totalParams)
             # 拼接GET请求串
             requestUrl = self.gatewayUrl + "?" + preString
-
             return requestUrl
         else:
             # 拼接表单字符串
@@ -305,8 +296,8 @@ class AopClient:
     #  @param para_temp 请求参数数组
     #  @return 提交表单HTML文本
     def buildRequestForm(self, para_temp):
-        sHtml = "<form id='alipaysubmit' name='alipaysubmit' action='"+self.gatewayUrl + \
-        "?charset="+trim(self.postCharset) +        "' method='POST'>"
+        sHtml = "<form id='alipaysubmit' name='alipaysubmit' action='" + self.gatewayUrl + \
+                "?charset=" + trim(self.postCharset) + "' method='POST'>"
         for key in para_temp:
             val = para_temp[key]
             if self.checkEmpty(val) is False:
@@ -316,15 +307,13 @@ class AopClient:
                 sHtml += "<input type='hidden' name='" + key + "' value='" + val + "'/>"
         # submit按钮控件请不要含有name属性
         sHtml = sHtml + "<input type='submit' value='ok' style='display:none''></form>"
-
         sHtml = sHtml + "<script>document.forms['alipaysubmit'].submit()</script>"
-
         return sHtml
 
 
     def execute(self, request, authToken=None, appInfoAuthtoken=None):
         self.setupCharsets(request)
-        #        #  如果两者编码不一致，会出现签名验签或者乱码
+        # 如果两者编码不一致，会出现签名验签或者乱码
         if strcasecmp(self.fileCharset, self.postCharset):
             # writeLog("本地文件字符集编码与表单提交编码不一致，请务必设置成一样，属性名分别为postCharset!")
             raise Exception("文件编码：[" + self.fileCharset + "] 与表单提交编码：[" + self.postCharset + "]两者不一致!")
@@ -369,8 +358,9 @@ class AopClient:
         sysParams["sign"] = self.generateSign(array_merge(apiParams, sysParams), self.signType)
         # 系统参数放入GET请求串
         requestUrl = self.gatewayUrl + "?"
-        foreach(sysParams as sysParamKey: sysParamValue)
-        requestUrl += "sysParamKey=" + urlencode(self.characet(sysParamValue, self.postCharset)) + "&"
+        for sysParamKey in sysParams:
+            sysParamValue = sysParams[sysParamKey]
+            requestUrl += "sysParamKey=" + urlencode(self.characet(sysParamValue, self.postCharset)) + "&"
         requestUrl = substr(requestUrl, 0, -1)
         # 发起HTTP请求
         try:
@@ -436,17 +426,16 @@ class AopClient:
             trigger_error("No such api: " + paramsArray["method"])
         session = isset(paramsArray["session"]) ? paramsArray["session"]: None
         req = requestClassName
-        foreach(paramsArray as paraKey: paraValue)
-        inflector.conf["separator"] = "_"
-        setterMethodName = inflector.camelize(paraKey)
-        inflector.conf["separator"] = "."
-        setterMethodName = "set" + inflector.camelize(setterMethodName)
-        if method_exists(req, setterMethodName):
-            req.setterMethodName(paraValue)
+        for paraKey in paramsArray:
+            paraValue = paramsArray[paraKey]
+            inflector.conf["separator"] = "_"
+            setterMethodName = inflector.camelize(paraKey)
+            inflector.conf["separator"] = "."
+            setterMethodName = "set" + inflector.camelize(setterMethodName)
+            if method_exists(req, setterMethodName):
+                req.setterMethodName(paraValue)
 
-
-    return self.execute(req, session)
-
+        return self.execute(req, session)
 
     #  校验value是否非空
     #   if not set ,return True
@@ -456,7 +445,7 @@ class AopClient:
             return True
         if value is None:
             return True
-        if trim(value) is "":
+        if trim(value) == "":
             return True
         return False
 
@@ -509,7 +498,7 @@ class AopClient:
         bizContent = params['biz_content']
         if isCheckSign:
             if not self.rsaCheckV2(params, rsaPublicKeyPem, signType):
-                return                 "<br/>checkSign failure<br/>"  # 改为返回
+                return "<br/>checkSign failure<br/>"  # 改为返回
 
         if isDecrypt:
             return self.rsaDecrypt(bizContent, rsaPrivateKeyPem, charset)
@@ -600,12 +589,10 @@ class AopClient:
         arrr = []
         for (i = n i < strlen(cont) i += subnum)
             res = self.subCNchar(cont, i, subnum, charset)
-            if !empty (res):
-                arrr[] = res
-
+            if res:
+                arrr.append(res)
 
         return arrr
-
 
     def subCNchar(self, str, start=0, length=0, charset="gbk"):
         if strlen(str) <= length:
@@ -617,7 +604,6 @@ class AopClient:
         preg_match_all(re[charset], str, match)
         slice = join("", array_slice(match[0], start, length))
         return slice
-
 
     def parserResponseSubCode(self, request, responseContent, respObject, format):
         if "json" == format:
@@ -644,7 +630,7 @@ class AopClient:
 
 
     def parserJSONSignData(self, request, responseContent, responseJSON):
-        signData = SignData()
+        signData = alipay_sdk_python.aop.SignData.SignData()
         signData.sign = self.parserJSONSign(responseJSON)
         signData.signSourceData = self.parserJSONSignSource(request, responseContent)
         return signData
@@ -679,7 +665,7 @@ class AopClient:
 
 
     def parserXMLSignData(self, request, responseContent):
-        signData = SignData()
+        signData = alipay_sdk_python.aop.SignData.SignData()
         signData.sign = self.parserXMLSign(responseContent)
         signData.signSourceData = self.parserXMLSignSource(request, responseContent)
         return signData
@@ -827,8 +813,8 @@ class AopClient:
         xmlStartNode = "<"+self.ENCRYPT_XML_NODE_NAME+    ">"
         xmlEndNode = "</"+self.ENCRYPT_XML_NODE_NAME+    ">"
         indexOfXmlNode = strpos(responseContent, xmlEndNode)
-        if (indexOfXmlNode < 0)
-            item = EncryptParseItem()
+        if indexOfXmlNode < 0:
+            item = alipay_sdk_python.aop.EncryptParseItem.EncryptParseItem()
             item.encryptContent = None
             item.startIndex = 0
             item.endIndex = 0
@@ -836,7 +822,7 @@ class AopClient:
         startIndex = signDataStartIndex + strlen(xmlStartNode)
         bizContentLen = indexOfXmlNode - startIndex
         bizContent = substr(responseContent, startIndex, bizContentLen)
-        encryptParseItem = EncryptParseItem()
+        encryptParseItem = alipay_sdk_python.aop.EncryptParseItem.EncryptParseItem()
         encryptParseItem.encryptContent = bizContent
         encryptParseItem.startIndex = signDataStartIndex
         encryptParseItem.endIndex = indexOfXmlNode + strlen(xmlEndNode)

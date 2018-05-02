@@ -4,6 +4,7 @@
 #  Date: 16/3/30
 #  Time: 下午3:25
 
+from alipay_sdk_python.Util import *
 
 #  加密方法
 #  @param string str

@@ -1,10 +1,12 @@
 # 替换 php 的同名函数,实现一样的功能
 import ast
+import base64
 import hashlib
 import json
 import math
 import numbers
 import random
+import re
 import sys
 import textwrap
 import time
@@ -105,6 +107,7 @@ def substr(string, start, length):
 
 # 下面注释的是不需要的
 CURLOPT_HEADER = pycurl.HEADER
+CURLINFO_HTTP_CODE = pycurl.HTTP_CODE
 CURLOPT_POST = pycurl.POST
 CURLOPT_POSTFIELDS = pycurl.POSTFIELDS
 CURLOPT_PROXY = pycurl.PROXY
@@ -157,6 +160,10 @@ def curl_close(curl):
     return curl.close()
 
 
+def curl_getinfo(curl, *args, **kwargs):
+    return
+
+
 def openssl_sign():
     pass
 
@@ -166,6 +173,10 @@ def openssl_free_key():
 
 
 def openssl_get_privatekey():
+    pass
+
+
+def openssl_pkey_get_private():
     pass
 
 
@@ -186,4 +197,55 @@ def array_merge(first_array, second_array):
         return first_array.union(second_array)
     return False
 
+
 urlencode = quote_plus
+
+
+def explode(delimiter, string, limit=0):
+    if limit:
+        return string.split(delimiter, limit)
+    else:
+        return string.split(delimiter)
+
+
+def stripos(string, find, start=0):
+    return string.find(find, beg=start, end=len(string))
+
+
+def base64_encode(string):
+    try:  # Python 2
+        return string.b64encode('base64')
+    except:  # Python 3
+        return base64.b64encode(string.encode("utf-8"))
+
+
+def method_exists(class_obj, method_name):
+    return hasattr(class_obj, method_name) and callable(getattr(class_obj, method_name))
+
+
+def trim(string, char=" "):
+    return string.strip(char)
+
+
+def iconv(in_charset, out_charset, string):
+    return string.decode(in_charset).encode(out_charset)
+
+
+def mb_convert_encoding(in_charset, out_charset, string):
+    return string.decode(in_charset).encode(out_charset)
+
+
+def trigger_error(text):
+    # todo 用 raise 不太好
+    raise ValueError(text)
+
+
+def class_exists(class_name, autoload):
+    # 判断类是否存在怎么搞?  todo
+    pass
+
+
+def preg_match_all(pattern ,string ,matches ,flags ,offset ):
+    # todo 不好
+    matches = re.findall(pattern, string)
+    matches = re.findall(pattern, string, flags)
