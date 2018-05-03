@@ -19,7 +19,7 @@ class AlipayMobilePublicMultiMediaExecute:
     }
 
     #  @header : 头部
-    def __init_(self, header, body, httpCode):
+    def __init__(self, header, body, httpCode):
         self.code = httpCode
         self.msg = ''
         self.params = header
@@ -36,7 +36,8 @@ class AlipayMobilePublicMultiMediaExecute:
     #  @return text | bin
     def getType(self):
         subject = self.params
-        pattern = '/Content\-Type:([^]+)/'
+        pattern = '/Content\-Type:([^;]+)/'
+        matches = []  # todo 测试引用的用法是否正常
         preg_match(pattern, subject, matches)
         if matches:
             type = matches[1]
@@ -49,6 +50,7 @@ class AlipayMobilePublicMultiMediaExecute:
     def getContentLength(self):
         subject = self.params
         pattern = '/Content-Length:\s# ([^\n]+)/'
+        matches = []  # todo 测试引用的用法是否正常
         preg_match(pattern, subject, matches)
         return matches[1] if matches[1] else ""
 

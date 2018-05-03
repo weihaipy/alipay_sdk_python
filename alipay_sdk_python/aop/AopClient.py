@@ -167,7 +167,7 @@ class AopClient:
             raise Exception(curl_error(ch), 0)
         else:
             httpStatusCode = curl_getinfo(ch, CURLINFO_HTTP_CODE)
-            if 200 !== httpStatusCode:
+            if 200 != httpStatusCode:
                 raise Exception(reponse, httpStatusCode)
         curl_close(ch)
         return reponse
@@ -345,7 +345,7 @@ class AopClient:
             sysParams["encrypt_type"] = self.encryptType
         if self.checkEmpty(apiParams['biz_content']):
             raise Exception(" api request Fail! The reason : encrypt request is not supperted!")
-        if self.checkEmpty(self.encryptKey) | | self.checkEmpty(self.encryptType):
+        if self.checkEmpty(self.encryptKey) or self.checkEmpty(self.encryptType):
             raise Exception(" encryptType and encryptKey must not None! ")
         if "AES" != self.encryptType:
             raise Exception("加密类型只支持AES")
@@ -702,7 +702,7 @@ class AopClient:
         signEndNodeName = "</" + self.SIGN_NODE_NAME + ">"
         indexOfSignNode = strpos(responseContent, signNodeName)
         indexOfSignEndNode = strpos(responseContent, signEndNodeName)
-        if indexOfSignNode < 0 | | indexOfSignEndNode < 0:
+        if indexOfSignNode < 0 or indexOfSignEndNode < 0:
             return None
         nodeIndex = (indexOfSignNode + strlen(signNodeName))
         indexLen = indexOfSignEndNode - nodeIndex

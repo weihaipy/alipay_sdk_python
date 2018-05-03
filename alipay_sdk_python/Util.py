@@ -127,12 +127,11 @@ CURLOPT_URL = pycurl.URL
 # TRUE = pycurl.TRUE
 
 
-def curl_init(url):
+def curl_init(url=""):
     c = pycurl.Curl()
 
-    # if $url was set
-    c.setopt(c.URL, url)
-    print(c)
+    if url:
+        c.setopt(c.URL, url)
     return c
 
 
@@ -245,7 +244,40 @@ def class_exists(class_name, autoload):
     pass
 
 
-def preg_match_all(pattern ,string ,matches ,flags ,offset ):
-    # todo 不好
-    matches = re.findall(pattern, string)
-    matches = re.findall(pattern, string, flags)
+def preg_match(pattern, string, matches=None, flags=None, offset=0):
+    # todo 有的参数没用上
+    res = re.search(pattern, string, flags)
+    if matches:
+        matches = res
+    else:
+        return res
+
+
+def preg_match_all(pattern, string, matches, flags, offset):
+    # todo 有的参数没用上
+    return re.findall(pattern, string, flags)
+
+
+def implode(separator="", array=None):
+    return separator.join(array)
+
+
+def date(format, timestamp=time.localtime(time.time())):
+    return time.strftime(format, timestamp)
+
+
+def isset(val):
+    try:
+        if [val]:
+            return True
+    except Exception:
+        return False
+
+
+def strpos(string, find, start):
+    try:
+        if start:
+            string = string[start:]
+        return string.index(find)
+    except IndexError:
+        return -1
