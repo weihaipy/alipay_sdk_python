@@ -1,6 +1,8 @@
 import alipay_sdk_python.aop.AopEncrypt
 from alipay_sdk_python.Util import *
 
+from alipay_sdk_python.aop.EncryptParseItem import  EncryptParseItem
+
 
 class AopClient:
     # 应用ID
@@ -266,7 +268,7 @@ class AopClient:
             sysParams["encrypt_type"] = self.encryptType
             if self.checkEmpty(apiParams['biz_content']):
                 raise Exception(" api request Fail! The reason : encrypt request is not supperted!")
-            if self.checkEmpty(self.encryptKey) | | self.checkEmpty(self.encryptType):
+            if self.checkEmpty(self.encryptKey) or self.checkEmpty(self.encryptType):
                 raise Exception(" encryptType and encryptKey must not None! ")
             if "AES" != self.encryptType:
                 raise Exception("加密类型只支持AES")
@@ -419,12 +421,12 @@ class AopClient:
     def exec(self, paramsArray):
         if  "method" not in  paramsArray:
             trigger_error("No api name passed")
-        inflector = LtInflector
+        inflector = LtInflector() # todo 这个类在 alipay-sdk-PHP-3.0.0\lotusphp_runtime\Inflector\Inflector.php
         inflector.conf["separator"] = "."
         requestClassName = ucfirst(inflector.camelize(substr(paramsArray["method"], 7))) + "Request"
         if not class_exists(requestClassName):
             trigger_error("No such api: " + paramsArray["method"])
-        session = isset(paramsArray["session"]) ? paramsArray["session"]: None
+        session = paramsArray["session"] if isset(paramsArray["session"]) else None
         req = requestClassName
         for paraKey in paramsArray:
             paraValue = paramsArray[paraKey]
@@ -577,9 +579,10 @@ class AopClient:
         decodes = explode(',', data)
         strNone = ""
         dcyCont = ""
-        foreach(decodes as n: decode):
+        for n in decodes:
+            decode = decodes[n]
             if not openssl_private_decrypt(decode, dcyCont, res):
-                return "<br/>" + openssl_error_string() + "<br/>"
+                return "<br/>" + openssl_error_string() + "<br/>"  # todo 改为返回
             strNone += dcyCont
         return strNone
 
@@ -587,22 +590,28 @@ class AopClient:
     def splitCN(self, cont, n=0, subnum=0, charset=""):
         # len = strlen(cont) / 3
         arrr = []
-        for (i = n i < strlen(cont) i += subnum)
+        i = n
+        while i <len(cont):
             res = self.subCNchar(cont, i, subnum, charset)
             if res:
                 arrr.append(res)
+            i += subnum
 
         return arrr
 
     def subCNchar(self, str, start=0, length=0, charset="gbk"):
         if strlen(str) <= length:
             return str
-        re['utf-8'] = "/[\x01-\x7f]|[\xc2-\xdf][\x80-\xbf]|[\xe0-\xef][\x80-\xbf]2|[\xf0-\xff][\x80-\xbf]3/"
-        re['gb2312'] = "/[\x01-\x7f]|[\xb0-\xf7][\xa0-\xfe]/"
-        re['gbk'] = "/[\x01-\x7f]|[\x81-\xfe][\x40-\xfe]/"
-        re['big5'] = "/[\x01-\x7f]|[\x81-\xfe]([\x40-\x7e]|\xa1-\xfe])/"
+        # todo 正则需要改为python的,以及测试
+        re = {
+            'utf-8' : "/[\x01-\x7f|[\xc2-\xdf[\x80-\xbf|[\xe0-\xef[\x80-\xbf2|[\xf0-\xff[\x80-\xbf3/",
+            'gb2312' : "/[\x01-\x7f|[\xb0-\xf7[\xa0-\xfe/",
+            'gbk' : "/[\x01-\x7f|[\x81-\xfe[\x40-\xfe/",
+            'big5' : "/[\x01-\x7f|[\x81-\xfe([\x40-\x7e|\xa1-\xfe)/"
+        }
+        match = []
         preg_match_all(re[charset], str, match)
-        slice = join("", array_slice(match[0], start, length))
+        slice = "".join(array_slice(match[0], start, length))
         return slice
 
     def parserResponseSubCode(self, request, responseContent, respObject, format):
@@ -742,8 +751,8 @@ class AopClient:
     def setupCharsets(self, request):
         if self.checkEmpty(self.postCharset):
             self.postCharset = 'UTF-8'
-        str = preg_match('/[\x80-\xff]/', self.appId) ? self.appId: print_r(request, True)
-        self.fileCharset = mb_detect_encoding(str, "UTF-8, GBK") == 'UTF-8' ? 'UTF-8': 'GBK'
+        str =  self.appId if preg_match('/[\x80-\xff]/', self.appId) else print_r(request, True) # todo print_r 要改
+        self.fileCharset =   'UTF-8' if mb_detect_encoding(str, "UTF-8, GBK") == 'UTF-8' else 'GBK'
 
 
     # 获取加密内容

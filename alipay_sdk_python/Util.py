@@ -5,6 +5,7 @@ import hashlib
 import json
 import math
 import numbers
+import pprint
 import random
 import re
 import sys
@@ -37,6 +38,7 @@ strtoupper = lambda var: var.upper()
 is_array = lambda var: isinstance(var, (list, tuple))
 is_string = lambda var: isinstance(var, str)
 strlen = lambda var: len(var)
+print_r = pprint.pprint
 
 
 def array_key_exists(key, dict_arr):
@@ -255,7 +257,11 @@ def preg_match(pattern, string, matches=None, flags=None, offset=0):
 
 def preg_match_all(pattern, string, matches, flags, offset):
     # todo 有的参数没用上
-    return re.findall(pattern, string, flags)
+    res = re.findall(pattern, string, flags)
+    if matches:
+        matches = res
+    else:
+        return res
 
 
 def implode(separator="", array=None):
@@ -281,3 +287,43 @@ def strpos(string, find, start):
         return string.index(find)
     except IndexError:
         return -1
+
+
+def array_slice(array, offset, length=None):
+    if is_array(array) and not isinstance(array, dict):
+        if isinstance(array, set):
+            array = list(array)
+            return set(array[offset:length])
+        return array[offset:length]
+    return False
+
+
+def strcasecmp(string1, string2):
+    # 比较字符串
+    string1 = string1.lower()
+    string2 = string2.lower()
+    if string1 == string2:
+        return 0
+    else:
+        return len(string1) - len(string2)
+
+
+def ucfirst(string):
+    # 首字母大写
+    return string.capitalize()
+
+
+def mb_detect_encoding(text, encoding_list=None):
+    '''Return first matched encoding in encoding_list, otherwise return None.
+    See [url]http://docs.python.org/2/howto/unicode.html#the-unicode-type[/url] for more info.
+    See [url]http://docs.python.org/2/library/codecs.html#standard-encodings[/url] for encodings.'''
+    if not encoding_list:
+        encoding_list = ['ascii']
+    for best_enc in encoding_list:
+        try:
+            unicode(text, best_enc)
+        except:
+            best_enc = None
+        else:
+            break
+    return best_enc
