@@ -6,6 +6,7 @@
 
 from alipay_sdk_python.Util import *
 
+
 #  加密方法
 #  @param string str
 #  @return string
@@ -34,8 +35,6 @@ def decrypt(str, screct_key):
     return encrypt_str
 
 
-
-
 #  填充算法
 #  @param string source
 #  @return string
@@ -54,7 +53,6 @@ def addPKCS7Padding(source):
 #  移去填充算法
 #  @param string source
 #  @return string
-
 def stripPKSC7Padding(source):
     source = trim(source)
     char = substr(source, -1)

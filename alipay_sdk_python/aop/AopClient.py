@@ -1,5 +1,6 @@
 import alipay_sdk_python.aop.AopEncrypt
 from alipay_sdk_python.Util import *
+from alipay_sdk_python.aop.AopEncrypt import encrypt,decrypt,addPKCS7Padding,stripPKSC7Padding
 
 from alipay_sdk_python.aop.EncryptParseItem import EncryptParseItem
 
@@ -317,7 +318,7 @@ class AopClient:
         iv = None
         if not self.checkEmpty(request.getApiVersion()):
             iv = request.getApiVersion()
-        else
+        else:
             iv = self.apiVersion
         # 组装系统参数
         sysParams = {
@@ -721,7 +722,7 @@ class AopClient:
                         if not checkResult:
                             raise Exception(
                                 "check sign Fail! [sign=" + signData.sign + ", signSourceData=" + signData.signSourceData + "]")
-                    else
+                    else:
                         raise Exception(
                             "check sign Fail! [sign=" + signData.sign + ", signSourceData=" + signData.signSourceData + "]")
 
