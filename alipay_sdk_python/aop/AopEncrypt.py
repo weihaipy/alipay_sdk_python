@@ -39,7 +39,6 @@ def decrypt(str, screct_key):
 #  填充算法
 #  @param string source
 #  @return string
-
 def addPKCS7Padding(source):
     source = trim(source)
     block = mcrypt_get_block_size(MCRYPT_RIJNDAEL_128, MCRYPT_MODE_CBC)
@@ -60,6 +59,7 @@ def stripPKSC7Padding(source):
     source = trim(source)
     char = substr(source, -1)
     num = ord(char)
-    if (num == 62)return source
+    if num == 62:
+        return source
     source = substr(source, 0, -num)
     return source

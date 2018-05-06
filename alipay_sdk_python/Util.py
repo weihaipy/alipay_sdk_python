@@ -1,10 +1,11 @@
-# 替换 php 的同名函数,实现一样的功能
+# 替换 php 的同名函数,实现一样的功能,算是一个兼容层
 import ast
 import base64
 import hashlib
 import json
 import math
 import numbers
+import OpenSSL
 import pprint
 import random
 import re
@@ -103,8 +104,13 @@ def simplexml_load_string(string, classname, options, ns, is_prefix):
     pass
 
 
-def substr(string, start, length):
-    return string[start:start + length]
+def substr(string, start, length=None):
+    if not length:
+        return string[start:]
+    elif length >= 0:
+        return string[start:start + length]
+    else:  # 小于0的
+        return string[start: length]
 
 
 # 下面注释的是不需要的
@@ -123,6 +129,9 @@ CURLOPT_SSLKEYTYPE = pycurl.SSLKEYTYPE
 CURLOPT_SSLKEY = pycurl.SSLKEY
 CURLOPT_TIMEOUT = pycurl.TIMEOUT
 CURLOPT_URL = pycurl.URL
+CURLOPT_FAILONERROR = pycurl.FAILONERROR
+CURLOPT_RETURNTRANSFER = ""  # php = 19913  todo
+CURLOPT_HTTPHEADER = pycurl.HTTPHEADER
 
 
 # FALSE = pycurl.FALSE
@@ -157,6 +166,9 @@ def curl_errno(curl):
     return getattr(curl, "errno")
 
 
+curl_error = curl_errno  # todo 暂时先这样
+
+
 def curl_close(curl):
     return curl.close()
 
@@ -165,8 +177,71 @@ def curl_getinfo(curl, *args, **kwargs):
     return
 
 
-def openssl_sign():
-    pass
+class CURLFile:
+    """
+    先复制 jetbrains 给出的 php 形式的
+    """
+    name = None
+    mime = None
+    postname = None
+
+    # Create a CURLFile object
+    # @link http://www.php.net/manual/en/curlfile.construct.php
+    # @param string $filename <p>Path to the file which will be uploaded.</p>
+    # @param string $mimetype [optional] <p>Mimetype of the file.</p>
+    # @param string $postname [optional] <p>Name of the file.</p>
+    # @since 5.5.0
+    def __init__(self, filename, mimetype, postname):
+        pass
+
+    # Get file name
+    # @link http://www.php.net/manual/en/curlfile.getfilename.php
+    # @return string Returns file name.
+    # @since 5.5.0
+    def getFilename(self):
+        pass
+
+    # Get MIME type
+    # @link http://www.php.net/manual/en/curlfile.getmimetype.php
+    # @return string Returns MIME type.
+    # @since 5.5.0
+    def getMimeType(self):
+        pass
+
+    # Get file name for POST
+    # @link http://www.php.net/manual/en/curlfile.getpostfilename.php
+    # @return string Returns file name for POST.
+    # @since 5.5.0
+    def getPostFilename(self):
+        pass
+
+    # Set MIME type
+    # @link http://www.php.net/manual/en/curlfile.setmimetype.php
+    # @param string $mime
+    # @since 5.5.0
+    def setMimeType(self, mime):
+        pass
+
+    # Set file name for POST
+    # http://www.php.net/manual/en/curlfile.setpostfilename.php
+    # @param string $postname
+    # @since 5.5.0
+    def setPostFilename(self, postname):
+        pass
+
+    # @link http://www.php.net/manual/en/curlfile.wakeup.php
+    # Unserialization handler
+    # @since 5.5.0
+    def __wakeup(self):
+        pass
+
+
+OPENSSL_ALGO_SHA256 = "sha256"  # todo 要测试,php 为7
+OPENSSL_ALGO_SHA1 = "sha1" # todo 暂时这样
+
+
+def openssl_sign(data, signature, digest):
+    return OpenSSL.crypto.sign(data, signature, digest)
 
 
 def openssl_free_key():
@@ -181,11 +256,35 @@ def openssl_pkey_get_private():
     pass
 
 
+def openssl_error_string():
+    pass
+
+
+def openssl_public_encrypt(data, crypted, key, padding):
+    pass
+
+
+def openssl_private_decrypt():
+    pass
+
+
+def openssl_verify(data, signature, digest, *args):
+    # todo  参数匹配
+    return OpenSSL.crypto.verify(cert, signature, data, digest)
+
+
+openssl_get_publickey = OpenSSL.crypto.X509.get_pubkey  # todo  参数对不上
+
+
 def wordwrap(text, width=75, *args, **kwargs):
     return textwrap.wrap(text, width)
 
 
-def str_replace(find, replace, string, count):
+def str_repeat(the_str, multiplier):
+    return the_str * multiplier
+
+
+def str_replace(find, replace, string, count=None):
     string.replace(find, replace, count)
 
 
@@ -327,3 +426,37 @@ def mb_detect_encoding(text, encoding_list=None):
         else:
             break
     return best_enc
+
+
+def http_build_query(formdata, *args):
+    try:  # 2.x
+        import urllib
+        return urllib.urlencode(formdata)
+    except Exception:  # 3.x
+        import urllib.parse
+        return urllib.parse.urlencode(formdata)
+
+
+def file_get_contents(path, include_path="", context=None, start=0, max_length=0):
+    if include_path:
+        raise ValueError("python 实现的此函数不支持 include_path 参数")
+    if context:
+        raise ValueError("python 实现的此函数不支持 context 参数")
+
+    if not start:
+        start = 0
+
+    # todo 本地文件
+    with open(path) as f:
+        f.seek(start)
+        if max_length:
+            return f.read(max_length)
+        else:
+            return f.read()
+
+
+def base64_decode(data):
+    try:  # Python 2.x:
+        return data.decode('base64')
+    except Exception:  # Python 3.x:
+        return base64.decodebytes(data.encode("utf-8"))  # todo 先试用 utf-8 编码

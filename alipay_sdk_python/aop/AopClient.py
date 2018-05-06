@@ -1,7 +1,7 @@
 import alipay_sdk_python.aop.AopEncrypt
 from alipay_sdk_python.Util import *
 
-from alipay_sdk_python.aop.EncryptParseItem import  EncryptParseItem
+from alipay_sdk_python.aop.EncryptParseItem import EncryptParseItem
 
 
 class AopClient:
@@ -62,7 +62,6 @@ class AopClient:
         # unset(k, v)
         return stringToBeSigned
 
-
     # 此方法对value做urlencode
     def getSignContentUrlencode(self, params):
         ksort(params)
@@ -81,7 +80,6 @@ class AopClient:
         # unset (k, v)
         return stringToBeSigned
 
-
     def sign(self, data, signType="RSA"):
         if self.checkEmpty(self.rsaPrivateKeyFilePath):
             priKey = self.rsaPrivateKey
@@ -91,7 +89,8 @@ class AopClient:
         else:
             priKey = file_get_contents(self.rsaPrivateKeyFilePath)
             res = openssl_get_privatekey(priKey)
-        (res) or die('您使用的私钥格式错误，请检查RSA私钥配置')
+        if not res:
+            raise ValueError('您使用的私钥格式错误，请检查RSA私钥配置')
         if "RSA2" == signType:
             openssl_sign(data, sign, res, OPENSSL_ALGO_SHA256)
         else:
@@ -100,7 +99,6 @@ class AopClient:
             openssl_free_key(res)
         sign = base64_encode(sign)
         return sign
-
 
     #  RSA单独签名方法，未做字符串处理,字符串处理见getSignContent()
     #  @param data 待签名字符串
@@ -115,13 +113,15 @@ class AopClient:
             res = "-----BEGIN RSA PRIVATE KEY-----\n" + \
                   wordwrap(priKey, 64, "\n", True) + \
                   "\n-----END RSA PRIVATE KEY-----"
-
         else:
             priKey = file_get_contents(privatekey)
             res = openssl_get_privatekey(priKey)
 
-        (res) or die('您使用的私钥格式错误，请检查RSA私钥配置')
+        if not res:
+            raise ValueError('您使用的私钥格式错误，请检查RSA私钥配置')
 
+        # todo sign 是指针
+        # 下面的 $sign 是指针
         if "RSA2" == signType:
             openssl_sign(data, sign, res, OPENSSL_ALGO_SHA256)
         else:
@@ -132,7 +132,6 @@ class AopClient:
 
         sign = base64_encode(sign)
         return sign
-
 
     def curl(self, url, postFields=None):
         ch = curl_init()
@@ -151,18 +150,19 @@ class AopClient:
                     encodeArray[k] = self.characet(v, self.postCharset)
                 else:  # 文件上传用multipart/form-data，否则用www-form-urlencoded
                     postMultipart = True
-                    encodeArray[k] =  \CURLFile(substr(v, 1))  # todo 原来是 new 出来的
+                    encodeArray[k] = CURLFile(substr(v, 1))  # todo 原来是 new 出来的
             # unset(k, v)
             curl_setopt(ch, CURLOPT_POST, True)
             if postMultipart:
                 curl_setopt(ch, CURLOPT_POSTFIELDS, encodeArray)
             else:
                 curl_setopt(ch, CURLOPT_POSTFIELDS, substr(postBodyString, 0, -1))
+        # todo 原来的 headers  用的 array 写的,检查
         if postMultipart:
-            headers = array(
-                'content-type: multipart/form-datacharset=' + self.postCharset + 'boundary=' + self.getMillisecond())
+            headers = 'content-type: multipart/form-datacharset=' + self.postCharset + \
+                      'boundary=' + str(self.getMillisecond())
         else:
-            headers = array('content-type: application/x-www-form-urlencodedcharset=' + self.postCharset)
+            headers = 'content-type: application/x-www-form-urlencodedcharset=' + self.postCharset
         curl_setopt(ch, CURLOPT_HTTPHEADER, headers)
         reponse = curl_exec(ch)
         if curl_errno(ch):
@@ -174,31 +174,28 @@ class AopClient:
         curl_close(ch)
         return reponse
 
-
     def getMillisecond(self):
-        list(s1, s2) = explode(' ', microtime())
-        return         sprintf('%.0f', (floatval(s1) + floatval(s2))  # 1000)
-
+        return int(time.time() * 1000)
 
     def logCommunicationError(self, apiName, requestUrl, errorCode, responseTxt):
-        localIp = isset(_SERVER["SERVER_ADDR"]) ? _SERVER["SERVER_ADDR"]: "CLI"
-        logger = LtLogger
-        logger.conf["log_file"] = rtrim(AOP_SDK_WORK_DIR, '\\/') + '/' + "logs/aop_comm_err_" + self.appId + "_" + date(
-            "Y-m-d") + ".log"
-        logger.conf["separator"] = "^_^"
+        # todo 这里的日志记录应该需要一个回调函数,实现自定义
+        # localIp = isset(_SERVER["SERVER_ADDR"]) ? _SERVER["SERVER_ADDR"]: "CLI"
+        # logger = LtLogger
+        # logger.conf["log_file"] = rtrim(AOP_SDK_WORK_DIR, '\\/') + '/' + "logs/aop_comm_err_" + self.appId + "_" + date(
+        #     "Y-m-d") + ".log"
+        # logger.conf["separator"] = "^_^"
         logData = [
             date("Y-m-d H:i:s"),
             apiName,
             self.appId,
-            localIp,
-            PHP_OS,
+            # localIp, # todo 这个需要传参
+            # PHP_OS,
             self.alipaySdkVersion,
             requestUrl,
             errorCode,
             str_replace("\n", "", responseTxt)
         ]
-        logger.log(logData)
-
+        # logger.log(logData)
 
     #  生成用于调用收银台SDK的字符串
     #  @param request SDK接口的请求参数对象
@@ -216,19 +213,19 @@ class AopClient:
             'charset': self.postCharset
         }
         version = request.getApiVersion()
-        params['version'] = self.checkEmpty(version) ? self.apiVersion: version
+        params['version'] = self.apiVersion if self.checkEmpty(version) else version
         notify_url = request.getNotifyUrl()
-        if notify_url :
+        if notify_url:
             params['notify_url'] = notify_url
         dict = request.getApiParas()
         params['biz_content'] = dict['biz_content']
         ksort(params)
         params['sign'] = self.generateSign(params, self.signType)
-        foreach(params as & value)  # 这里 value 是传指针
-            value = self.characet(value, params['charset'])
+        for key in params:
+            value = params[key]
+            params[key] = self.characet(value, params['charset'])
 
         return http_build_query(params)
-
 
     # 页面提交执行方法
     # @param：跳转类接口的request httpmethod 提交方式。两个值可选：post、get
@@ -293,7 +290,6 @@ class AopClient:
             # 拼接表单字符串
             return self.buildRequestForm(totalParams)
 
-
     #  建立请求，以表单HTML形式构造（默认）
     #  @param para_temp 请求参数数组
     #  @return 提交表单HTML文本
@@ -311,7 +307,6 @@ class AopClient:
         sHtml = sHtml + "<input type='submit' value='ok' style='display:none''></form>"
         sHtml = sHtml + "<script>document.forms['alipaysubmit'].submit()</script>"
         return sHtml
-
 
     def execute(self, request, authToken=None, appInfoAuthtoken=None):
         self.setupCharsets(request)
@@ -354,7 +349,6 @@ class AopClient:
         # 执行加密
         enCryptContent = encrypt(apiParams['biz_content'], self.encryptKey)
         apiParams['biz_content'] = enCryptContent
-
 
         # 签名
         sysParams["sign"] = self.generateSign(array_merge(apiParams, sysParams), self.signType)
@@ -401,9 +395,8 @@ class AopClient:
             else:
                 resp = self.encryptXMLSignSource(request, resp)
                 r = iconv(self.postCharset, self.fileCharset + "#IGNORE", resp)
-                respObject =simplexml_load_string(r)
+                respObject = simplexml_load_string(r)
         return respObject
-
 
     #  转换字符集编码
     #  @param data
@@ -417,11 +410,10 @@ class AopClient:
                 #                data = iconv(fileType, targetCharset.'#IGNORE', data)
         return data
 
-
     def exec(self, paramsArray):
-        if  "method" not in  paramsArray:
+        if "method" not in paramsArray:
             trigger_error("No api name passed")
-        inflector = LtInflector() # todo 这个类在 alipay-sdk-PHP-3.0.0\lotusphp_runtime\Inflector\Inflector.php
+        inflector = LtInflector()  # todo 这个类在 alipay-sdk-PHP-3.0.0\lotusphp_runtime\Inflector\Inflector.php
         inflector.conf["separator"] = "."
         requestClassName = ucfirst(inflector.camelize(substr(paramsArray["method"], 7))) + "Request"
         if not class_exists(requestClassName):
@@ -451,7 +443,6 @@ class AopClient:
             return True
         return False
 
-
     # rsaCheckV1 & rsaCheckV2
     #   验证签名
     #   在使用本方法前，必须初始化AopClient且传入公钥参数。
@@ -462,24 +453,23 @@ class AopClient:
         params['sign'] = None
         return self.verify(self.getSignContent(params), sign, rsaPublicKeyFilePath, signType)
 
-
     def rsaCheckV2(self, params, rsaPublicKeyFilePath, signType='RSA'):
         sign = params['sign']
         params['sign'] = None
         return self.verify(self.getSignContent(params), sign, rsaPublicKeyFilePath, signType)
 
-
     def verify(self, data, sign, rsaPublicKeyFilePath, signType='RSA'):
         if self.checkEmpty(self.alipayPublicKey):
             pubKey = self.alipayrsaPublicKey
-            res = "-----BEGIN PUBLIC KEY-----\n"+ wordwrap(pubKey, 64, "\n", True)+\
-            "\n-----END PUBLIC KEY-----"
+            res = "-----BEGIN PUBLIC KEY-----\n" + wordwrap(pubKey, 64, "\n", True) + \
+                  "\n-----END PUBLIC KEY-----"
         else:
             # 读取公钥文件
             pubKey = file_get_contents(rsaPublicKeyFilePath)
             # 转换为openssl格式密钥
             res = openssl_get_publickey(pubKey)
-        (res) or die('支付宝RSA公钥错误。请检查公钥文件格式是否正确')
+        if not res:
+            raise ValueError('支付宝RSA公钥错误。请检查公钥文件格式是否正确')
         # 调用openssl内置方法验签，返回bool值
         if "RSA2" == signType:
             result = (bool)
@@ -491,7 +481,6 @@ class AopClient:
             # 释放资源
             openssl_free_key(res)
         return result
-
 
     #   在使用本方法前，必须初始化AopClient且传入公私钥参数。
     #   公钥是否是读取字符串还是读取文件，是根据初始化传入的值判断的。
@@ -506,7 +495,6 @@ class AopClient:
             return self.rsaDecrypt(bizContent, rsaPrivateKeyPem, charset)
         return bizContent
 
-
     #   在使用本方法前，必须初始化AopClient且传入公私钥参数。
     #   公钥是否是读取字符串还是读取文件，是根据初始化传入的值判断的。
     def encryptAndSign(self, bizContent, rsaPublicKeyPem, rsaPrivateKeyPem, charset, isEncrypt, isSign, signType='RSA'):
@@ -514,14 +502,14 @@ class AopClient:
         if isEncrypt and isSign:
             encrypted = self.rsaEncrypt(bizContent, rsaPublicKeyPem, charset)
             sign = self.sign(encrypted, signType)
-            response = "<?xml version=\"1.0\" encoding=\"charset\"?><alipay><response>" + encrypted +\
+            response = "<?xml version=\"1.0\" encoding=\"charset\"?><alipay><response>" + encrypted + \
                        "</response><encryption_type>RSA</encryption_type><sign>" + sign + \
                        "</sign><sign_type>signType</sign_type></alipay>"
             return response
         # 加密，不签名
         if isEncrypt and (not isSign):
             encrypted = self.rsaEncrypt(bizContent, rsaPublicKeyPem, charset)
-            response = "<?xml version=\"1.0\" encoding=\"charset\"?><alipay><response>" + encrypted +\
+            response = "<?xml version=\"1.0\" encoding=\"charset\"?><alipay><response>" + encrypted + \
                        "</response><encryption_type>signType</encryption_type></alipay>"
             return response
         # 不加密，但签名
@@ -534,32 +522,31 @@ class AopClient:
         response = "<?xml version=\"1.0\" encoding=\"charset\"?>bizContent"
         return response
 
-
     #   在使用本方法前，必须初始化AopClient且传入公私钥参数。
     #   公钥是否是读取字符串还是读取文件，是根据初始化传入的值判断的。
     def rsaEncrypt(self, data, rsaPublicKeyPem, charset):
         if self.checkEmpty(self.alipayPublicKey):
             # 读取字符串
             pubKey = self.alipayrsaPublicKey
-            res = "-----BEGIN PUBLIC KEY-----\n" +   wordwrap(pubKey, 64, "\n", True) +\
-            "\n-----END PUBLIC KEY-----"
+            res = "-----BEGIN PUBLIC KEY-----\n" + wordwrap(pubKey, 64, "\n", True) + \
+                  "\n-----END PUBLIC KEY-----"
 
         else:
             # 读取公钥文件
             pubKey = file_get_contents(rsaPublicKeyFilePath)
             # 转换为openssl格式密钥
             res = openssl_get_publickey(pubKey)
-        (res) or die('支付宝RSA公钥错误。请检查公钥文件格式是否正确')
+        if not res:
+            raise ValueError('支付宝RSA公钥错误。请检查公钥文件格式是否正确')
         blocks = self.splitCN(data, 0, 30, charset)
-        chrtext  = None
-        # encodes  = array()
-        foreach(blocks as n: block)
-            if not openssl_public_encrypt(block, chrtext , res):
-                return            "<br/>" + openssl_error_string() + "<br/>"  # 改为返回
-            encodes[] = chrtext 
+        chrtext = None
+        encodes = []
+        for n, block in enumerate(blocks):
+            if not openssl_public_encrypt(block, chrtext, res):
+                return "<br/>" + openssl_error_string() + "<br/>"  # 改为返回
+            encodes.append(chrtext)
         chrtext = implode(",", encodes)
         return base64_encode(chrtext)
-
 
     #   在使用本方法前，必须初始化AopClient且传入公私钥参数。
     #   公钥是否是读取字符串还是读取文件，是根据初始化传入的值判断的。
@@ -567,14 +554,14 @@ class AopClient:
         if (self.checkEmpty(self.rsaPrivateKeyFilePath))
             # 读字符串
             priKey = self.rsaPrivateKey
-            res = "-----BEGIN RSA PRIVATE KEY-----\n".
-            wordwrap(priKey, 64, "\n", True).
-            "\n-----END RSA PRIVATE KEY-----"
-
+            res = "-----BEGIN RSA PRIVATE KEY-----\n" + \
+                  wordwrap(priKey, 64, "\n", True) + \
+                  "\n-----END RSA PRIVATE KEY-----"
         else:
             priKey = file_get_contents(self.rsaPrivateKeyFilePath)
             res = openssl_get_privatekey(priKey)
-        (res) or die('您使用的私钥格式错误，请检查RSA私钥配置')
+        if not res:
+            raise ValueError('您使用的私钥格式错误，请检查RSA私钥配置')
         # 转换为openssl格式密钥
         decodes = explode(',', data)
         strNone = ""
@@ -586,12 +573,11 @@ class AopClient:
             strNone += dcyCont
         return strNone
 
-
     def splitCN(self, cont, n=0, subnum=0, charset=""):
         # len = strlen(cont) / 3
         arrr = []
         i = n
-        while i <len(cont):
+        while i < len(cont):
             res = self.subCNchar(cont, i, subnum, charset)
             if res:
                 arrr.append(res)
@@ -602,12 +588,12 @@ class AopClient:
     def subCNchar(self, str, start=0, length=0, charset="gbk"):
         if strlen(str) <= length:
             return str
-        # todo 正则需要改为python的,以及测试
+        # todo 正则需要改为python的,以及测试,python3下应该只需要转码截取即可
         re = {
-            'utf-8' : "/[\x01-\x7f|[\xc2-\xdf[\x80-\xbf|[\xe0-\xef[\x80-\xbf2|[\xf0-\xff[\x80-\xbf3/",
-            'gb2312' : "/[\x01-\x7f|[\xb0-\xf7[\xa0-\xfe/",
-            'gbk' : "/[\x01-\x7f|[\x81-\xfe[\x40-\xfe/",
-            'big5' : "/[\x01-\x7f|[\x81-\xfe([\x40-\x7e|\xa1-\xfe)/"
+            'utf-8': "/[\x01-\x7f|[\xc2-\xdf[\x80-\xbf|[\xe0-\xef[\x80-\xbf2|[\xf0-\xff[\x80-\xbf3/",
+            'gb2312': "/[\x01-\x7f|[\xb0-\xf7[\xa0-\xfe/",
+            'gbk': "/[\x01-\x7f|[\x81-\xfe[\x40-\xfe/",
+            'big5': "/[\x01-\x7f|[\x81-\xfe([\x40-\x7e|\xa1-\xfe)/"
         }
         match = []
         preg_match_all(re[charset], str, match)
@@ -637,13 +623,11 @@ class AopClient:
             # xml格式sub_code在同一层级
             return respObject.sub_code
 
-
     def parserJSONSignData(self, request, responseContent, responseJSON):
         signData = alipay_sdk_python.aop.SignData.SignData()
         signData.sign = self.parserJSONSign(responseJSON)
         signData.signSourceData = self.parserJSONSignSource(request, responseContent)
         return signData
-
 
     def parserJSONSignSource(self, request, responseContent):
         apiName = request.getApiMethodName()
@@ -657,7 +641,6 @@ class AopClient:
         else:
             return None
 
-
     def parserJSONSource(self, responseContent, nodeName, nodeIndex):
         signDataStartIndex = nodeIndex + strlen(nodeName) + 2
         signIndex = strpos(responseContent, "\"" + self.SIGN_NODE_NAME + "\"")
@@ -668,17 +651,14 @@ class AopClient:
             return None
         return substr(responseContent, signDataStartIndex, indexLen)
 
-
     def parserJSONSign(self, responseJSon):
         return responseJSon.sign
-
 
     def parserXMLSignData(self, request, responseContent):
         signData = alipay_sdk_python.aop.SignData.SignData()
         signData.sign = self.parserXMLSign(responseContent)
         signData.signSourceData = self.parserXMLSignSource(request, responseContent)
         return signData
-
 
     def parserXMLSignSource(self, request, responseContent):
         apiName = request.getApiMethodName()
@@ -694,7 +674,6 @@ class AopClient:
         else:
             return None
 
-
     def parserXMLSource(self, responseContent, nodeName, nodeIndex):
         signDataStartIndex = nodeIndex + strlen(nodeName) + 1
         signIndex = strpos(responseContent, "<" + self.SIGN_NODE_NAME + ">")
@@ -704,7 +683,6 @@ class AopClient:
         if indexLen < 0:
             return None
         return substr(responseContent, signDataStartIndex, indexLen)
-
 
     def parserXMLSign(self, responseContent):
         signNodeName = "<" + self.SIGN_NODE_NAME + ">"
@@ -720,7 +698,6 @@ class AopClient:
         # 签名
         return substr(responseContent, nodeIndex, indexLen)
 
-
     #  验签
     #  @param request
     #  @param signData
@@ -733,7 +710,8 @@ class AopClient:
                 raise Exception(" check sign Fail! The reason : signData is Empty")
             # 获取结果sub_code
             responseSubCode = self.parserResponseSubCode(request, resp, respObject, self.format)
-            if not self.checkEmpty(responseSubCode) or (self.checkEmpty(responseSubCode) and not self.checkEmpty(signData.sign)):
+            if not self.checkEmpty(responseSubCode) or (
+                    self.checkEmpty(responseSubCode) and not self.checkEmpty(signData.sign)):
                 checkResult = self.verify(signData.signSourceData, signData.sign, self.alipayPublicKey, self.signType)
                 if not checkResult:
                     if strpos(signData.signSourceData, "\\/") > 0:
@@ -747,13 +725,11 @@ class AopClient:
                         raise Exception(
                             "check sign Fail! [sign=" + signData.sign + ", signSourceData=" + signData.signSourceData + "]")
 
-
     def setupCharsets(self, request):
         if self.checkEmpty(self.postCharset):
             self.postCharset = 'UTF-8'
-        str =  self.appId if preg_match('/[\x80-\xff]/', self.appId) else print_r(request, True) # todo print_r 要改
-        self.fileCharset =   'UTF-8' if mb_detect_encoding(str, "UTF-8, GBK") == 'UTF-8' else 'GBK'
-
+        str = self.appId if preg_match('/[\x80-\xff]/', self.appId) else print_r(request, True)  # todo print_r 要改
+        self.fileCharset = 'UTF-8' if mb_detect_encoding(str, "UTF-8, GBK") == 'UTF-8' else 'GBK'
 
     # 获取加密内容
     def encryptJSONSignSource(self, request, responseContent):
@@ -762,7 +738,6 @@ class AopClient:
         bodyEndContent = substr(responseContent, parsetItem.endIndex, strlen(responseContent) + 1 - parsetItem.endIndex)
         bizContent = decrypt(parsetItem.encryptContent, self.encryptKey)
         return bodyIndexContent + bizContent + bodyEndContent
-
 
     def parserEncryptJSONSignSource(self, request, responseContent):
         apiName = request.getApiMethodName()
@@ -775,7 +750,6 @@ class AopClient:
             return self.parserEncryptJSONItem(responseContent, self.ERROR_RESPONSE, errorIndex)
         else:
             return None
-
 
     def parserEncryptJSONItem(self, responseContent, nodeName, nodeIndex):
         signDataStartIndex = nodeIndex + strlen(nodeName) + 2
@@ -792,7 +766,6 @@ class AopClient:
         encryptParseItem.endIndex = signDataEndIndex
         return encryptParseItem
 
-
     # 获取加密内容
     def encryptXMLSignSource(self, request, responseContent):
         parsetItem = self.parserEncryptXMLSignSource(request, responseContent)
@@ -800,7 +773,6 @@ class AopClient:
         bodyEndContent = substr(responseContent, parsetItem.endIndex, strlen(responseContent) + 1 - parsetItem.endIndex)
         bizContent = decrypt(parsetItem.encryptContent, self.encryptKey)
         return bodyIndexContent + bizContent + bodyEndContent
-
 
     def parserEncryptXMLSignSource(self, request, responseContent):
         apiName = request.getApiMethodName()
@@ -816,11 +788,10 @@ class AopClient:
         else:
             return None
 
-
     def parserEncryptXMLItem(self, responseContent, nodeName, nodeIndex):
         signDataStartIndex = nodeIndex + strlen(nodeName) + 1
-        xmlStartNode = "<"+self.ENCRYPT_XML_NODE_NAME+    ">"
-        xmlEndNode = "</"+self.ENCRYPT_XML_NODE_NAME+    ">"
+        xmlStartNode = "<" + self.ENCRYPT_XML_NODE_NAME + ">"
+        xmlEndNode = "</" + self.ENCRYPT_XML_NODE_NAME + ">"
         indexOfXmlNode = strpos(responseContent, xmlEndNode)
         if indexOfXmlNode < 0:
             item = alipay_sdk_python.aop.EncryptParseItem.EncryptParseItem()
@@ -836,7 +807,6 @@ class AopClient:
         encryptParseItem.startIndex = signDataStartIndex
         encryptParseItem.endIndex = indexOfXmlNode + strlen(xmlEndNode)
         return encryptParseItem
-
 
     def echoDebug(self, content):
         if self.debugInfo:
