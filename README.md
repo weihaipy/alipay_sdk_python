@@ -40,6 +40,7 @@
 
 # 问题:
 * 由于注释太多,没有全部改为 python 标准的 docstring 形式
+* php 版本的 AopEncrypt.encrypt 中的 mcrypt_encrypt 没有传递 $iv,应该作为最后一个参数传过去才能运行
 
 # TODO
 替换同名函数

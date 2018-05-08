@@ -3,4 +3,5 @@ from alipay_sdk_python.aop import *
 # from alipay_sdk_python.aop.request import *
 
 
-# 复制 AopSdk 中的代码过来
+# 路径
+rsaPublicKeyFilePath = ""  # todo 后面的需要引用

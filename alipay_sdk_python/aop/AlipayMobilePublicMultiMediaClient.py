@@ -121,8 +121,8 @@ class AlipayMobilePublicMultiMediaClient:
             pass
 
         privateKey = "-----BEGIN RSA PRIVATE KEY-----\n" + implode("\n", p_key)
-        privateKey = privateKey.
-        "\n-----END RSA PRIVATE KEY-----"
+        privateKey = privateKey + \
+                     "\n-----END RSA PRIVATE KEY-----"
 
         #        echo "\n\n私钥:\n"
         #        echo( privateKey )

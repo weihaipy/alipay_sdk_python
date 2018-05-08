@@ -1,4 +1,5 @@
 # 替换 php 的同名函数,实现一样的功能,算是一个兼容层
+# 有一些兼容 py2 的代码,但不保证全兼容 py2
 import ast
 import base64
 import hashlib

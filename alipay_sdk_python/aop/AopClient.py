@@ -8,7 +8,6 @@ from alipay_sdk_python.aop.EncryptParseItem import EncryptParseItem
 class AopClient:
     # 应用ID
     appId = None
-
     # 私钥文件路径
     rsaPrivateKeyFilePath = None
     # 私钥值
@@ -414,7 +413,9 @@ class AopClient:
     def exec(self, paramsArray):
         if "method" not in paramsArray:
             trigger_error("No api name passed")
-        inflector = LtInflector()  # todo 这个类在 alipay-sdk-PHP-3.0.0\lotusphp_runtime\Inflector\Inflector.php
+        # todo 这个类在 alipay-sdk-PHP-3.0.0\lotusphp_runtime\Inflector\Inflector.php
+        # todo 可能需要用 requests 处理一下
+        inflector = LtInflector()
         inflector.conf["separator"] = "."
         requestClassName = ucfirst(inflector.camelize(substr(paramsArray["method"], 7))) + "Request"
         if not class_exists(requestClassName):
@@ -448,18 +449,18 @@ class AopClient:
     #   验证签名
     #   在使用本方法前，必须初始化AopClient且传入公钥参数。
     #   公钥是否是读取字符串还是读取文件，是根据初始化传入的值判断的。
-    def rsaCheckV1(self, params, rsaPublicKeyFilePath, signType='RSA'):
+    def rsaCheckV1(self, params, rsaPublicKeyFilePath=alipay_sdk_python.rsaPublicKeyFilePath, signType='RSA'):
         sign = params['sign']
         params['sign_type'] = None
         params['sign'] = None
         return self.verify(self.getSignContent(params), sign, rsaPublicKeyFilePath, signType)
 
-    def rsaCheckV2(self, params, rsaPublicKeyFilePath, signType='RSA'):
+    def rsaCheckV2(self, params, rsaPublicKeyFilePath=alipay_sdk_python.rsaPublicKeyFilePath, signType='RSA'):
         sign = params['sign']
         params['sign'] = None
         return self.verify(self.getSignContent(params), sign, rsaPublicKeyFilePath, signType)
 
-    def verify(self, data, sign, rsaPublicKeyFilePath, signType='RSA'):
+    def verify(self, data, sign, rsaPublicKeyFilePath=alipay_sdk_python.rsaPublicKeyFilePath, signType='RSA'):
         if self.checkEmpty(self.alipayPublicKey):
             pubKey = self.alipayrsaPublicKey
             res = "-----BEGIN PUBLIC KEY-----\n" + wordwrap(pubKey, 64, "\n", True) + \
@@ -534,7 +535,7 @@ class AopClient:
 
         else:
             # 读取公钥文件
-            pubKey = file_get_contents(rsaPublicKeyFilePath)
+            pubKey = file_get_contents(alipay_sdk_python.rsaPublicKeyFilePath)
             # 转换为openssl格式密钥
             res = openssl_get_publickey(pubKey)
         if not res:
@@ -552,7 +553,7 @@ class AopClient:
     #   在使用本方法前，必须初始化AopClient且传入公私钥参数。
     #   公钥是否是读取字符串还是读取文件，是根据初始化传入的值判断的。
     def rsaDecrypt(self, data, rsaPrivateKeyPem, charset):
-        if (self.checkEmpty(self.rsaPrivateKeyFilePath))
+        if self.checkEmpty(self.rsaPrivateKeyFilePath):
             # 读字符串
             priKey = self.rsaPrivateKey
             res = "-----BEGIN RSA PRIVATE KEY-----\n" + \
@@ -613,7 +614,7 @@ class AopClient:
                 rInnerObject = respObject.rootNodeName
             elif errorIndex > 0:
                 rInnerObject = respObject.errorNodeName
-            else
+            else:
                 return None
             # 存在属性则返回对应值
             if isset(rInnerObject.sub_code):
