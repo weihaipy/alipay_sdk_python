@@ -1,6 +1,8 @@
 # alipay-sdk_python
 基于支付宝官方 alipay-sdk-PHP-3.0.0 翻译 python 版本
 
+鉴于支付宝官方已有公测版SDK,本仓库停止更新,官方版请看: https://pypi.org/project/alipay-sdk-python/
+
 # 注意,翻译尚未完成 
 
 **欢迎参与翻译** **欢迎 star** **欢迎 fork** 
