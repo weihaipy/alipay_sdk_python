@@ -4,7 +4,9 @@
 #  Date: 16/3/30
 #  Time: 下午3:25
 #
-# from alipay_sdk_python.Util import *
+from alipay_sdk_python.Util import *
+
+
 #
 #  todo 这里的加密解密需要用 pycryptodome 完全重写
 
@@ -65,9 +67,11 @@ def stripPKSC7Padding(source):
     return source
 
 
+# 下面的是尝试测试上面的功能
+
 
 from Crypto.Cipher import AES
-from Crypto import Random
+import Crypto.Random
 import base64
 
 """
@@ -115,7 +119,9 @@ class AESUtil:
         if isinstance(key, str):
             key = key.encode("utf-8")
 
-        cipher = AES.new(key, self.mode)
+        iv = Crypto.Random.new().read(AES.block_size)
+        cipher = AES.new(key, self.mode, iv)
+
         # x = AES.block_size - (len(string) % AES.block_size)
         # if x != 0:
         #     string = string + chr(x) * x
@@ -132,13 +138,19 @@ class AESUtil:
         if isinstance(key, str):
             key = key.encode("utf-8")
 
-        cipher = AES.new(key, self.mode)
+        iv = Crypto.Random.new().read(AES.block_size)
+        cipher = AES.new(key, self.mode, iv, nonce=nonce)
         # enStr += (len(enStr) % 4) * "="
         decryptByts = base64.b64decode(enStr)
         # decryptByts = b'\xbc\x06\xa3\xdb|o&x\xaf1\xd5A\xd9K\xf2m'
         print("decryptByts::", decryptByts)
 
         msg = cipher.decrypt(decryptByts)
+        try:
+            cipher.verify(tag)
+            print("The message is authentic:", msg)
+        except ValueError:
+            print("Key incorrect or message corrupted")
 
         print("msg::", msg, len(msg) - 1, msg[len(msg) - 1])
 

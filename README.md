@@ -43,15 +43,14 @@
 * php 版本的 AopEncrypt.encrypt 中的 mcrypt_encrypt 没有传递 $iv,应该作为最后一个参数传过去才能运行
 
 # TODO
-替换同名函数
-AlipayMobilePublicMultiMediaClient.py
-AlipayMobilePublicMultiMediaExecute.py
-AopClient.py
-AopSdk.py
+* AopEncrypt.py 中的 encrypt 和 decrypt 先实现一下,然后是 AopClient.py
+* 替换同名函数
+    * AlipayMobilePublicMultiMediaClient.py
+    * AlipayMobilePublicMultiMediaExecute.py
+    * AopClient.py
+    * AopSdk.py
 
 
-# 吐槽
-文件太多了,翻译起来比较麻烦
 
 # demo 参照 https://docs.open.alipay.com/54/103419/
 用法和 php 版本的一样,,只是由于目录结构的原因导致导入的时候代码较长,仅以普通调用为例:

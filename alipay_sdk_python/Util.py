@@ -238,22 +238,22 @@ class CURLFile:
 
 
 OPENSSL_ALGO_SHA256 = "sha256"  # todo 要测试,php 为7
-OPENSSL_ALGO_SHA1 = "sha1" # todo 暂时这样
+OPENSSL_ALGO_SHA1 = "sha1"  # todo 暂时这样
 
 
-def openssl_sign(data, signature, digest):
-    return OpenSSL.crypto.sign(data, signature, digest)
+def openssl_sign(data, signature, digest, signature_alg):
+    return OpenSSL.crypto.sign(data, signature, digest, signature_alg)
 
 
-def openssl_free_key():
+def openssl_free_key(key_identifier):
     pass
 
 
-def openssl_get_privatekey():
+def openssl_get_privatekey(key):
     pass
 
 
-def openssl_pkey_get_private():
+def openssl_pkey_get_private(key, passphrase):
     pass
 
 
@@ -265,7 +265,7 @@ def openssl_public_encrypt(data, crypted, key, padding):
     pass
 
 
-def openssl_private_decrypt():
+def openssl_private_decrypt(data, decrypted, key, padding):
     pass
 
 
@@ -419,6 +419,7 @@ def mb_detect_encoding(text, encoding_list=None):
     See [url]http://docs.python.org/2/library/codecs.html#standard-encodings[/url] for encodings.'''
     if not encoding_list:
         encoding_list = ['ascii']
+    best_enc = None
     for best_enc in encoding_list:
         try:
             unicode(text, best_enc)
@@ -461,3 +462,20 @@ def base64_decode(data):
         return data.decode('base64')
     except Exception:  # Python 3.x:
         return base64.decodebytes(data.encode("utf-8"))  # todo 先试用 utf-8 编码
+
+
+def mcrypt_encrypt(cipher, key, data, mode, iv):
+    pass
+
+
+def mcrypt_get_block_size(cipher, mode):
+    """
+    php已移除
+    int mcrypt_get_block_size ( int $cipher )
+    int mcrypt_get_block_size ( string $cipher , string $mode )
+    第一个原型针对 libmcrypt 2.2.x， 第二个原型针对 libmcrypt 2.4.x 或 2.5.x。
+    :param cipher:
+    :param mode:
+    :return:
+    """
+    pass

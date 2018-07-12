@@ -362,6 +362,7 @@ class AopClient:
         try:
             resp = self.curl(requestUrl, apiParams)
         except Exception as e:
+            # todo 异常处理没有  getCode 和 getMessage
             self.logCommunicationError(sysParams["method"], requestUrl, "HTTP_ERROR_" + e.getCode(), e.getMessage())
             return False
         # 解析AOP返回结果
